@@ -1,5 +1,5 @@
 ---
-description: "Generate a dated version tag, prepend update_log.txt, commit with that version, and push to main after confirmation."
+description: "Generate a dated version tag, prepend update_log.txt, commit with that version, and push the current branch after confirmation."
 ---
 
 # update-commit
@@ -19,7 +19,9 @@ Use `vYYMMDD` based on local date.
 ### Step 0 - Preflight checks
 
 1. Confirm this is a git repository using `git rev-parse --is-inside-work-tree`.
-2. If not inside a git work tree, stop and ask the user whether to initialize git now.
+2. If not inside a git work tree, stop and ask the user via a Claude Code choice list whether to initialize git now.
+   - Options: `Initialize git now` / `Do not initialize`.
+   - Only run `git init` when the user explicitly selects `Initialize git now`.
 3. Inspect changes across all states:
    - tracked unstaged: `git diff --name-only`
    - tracked staged: `git diff --cached --name-only`
@@ -48,7 +50,12 @@ Use deterministic selection:
 
    `Confirm or modify the pre-generated update log.`
 
-3. Wait for the user-confirmed text before continuing.
+3. Present the draft through a Claude Code choice list and wait for explicit selection before continuing.
+   - Options: `Use as-is`, `Modify update log`, `Cancel`.
+   - If `Use as-is`, continue with the draft unchanged.
+   - If `Modify update log`, collect the user's edited text and use that as the confirmed log.
+   - If `Cancel`, stop without writing `update_log.txt`, committing, or pushing.
+4. Wait for the user-confirmed text before continuing.
 
 ### Step 3 - Prepend `update_log.txt`
 
@@ -69,10 +76,20 @@ Rules:
 ### Step 4 - Commit
 
 1. Stage intended changes explicitly:
-   - always stage `update_log.txt`
-   - stage files included in the reviewed diff for this run
-2. Before commit, check staged paths for obvious sensitive files (for example: `.env`, `*.pem`, `*.key`, `credentials*`). If found, stop and ask user confirmation before including them.
-3. Commit with message body equal to version + confirmed log:
+   - always stage files included in the reviewed diff for this run
+2. Before staging `update_log.txt`, inspect `.gitignore` handling and ask the user through a Claude Code choice list.
+   - If `update_log.txt` is currently ignored, options must be:
+     - `Temporarily force-add and commit update_log.txt`
+     - `Keep update_log.txt ignored and do not commit it`
+     - `Cancel`
+   - If `update_log.txt` is not currently ignored, options must be:
+     - `Commit update_log.txt in this commit`
+     - `Add update_log.txt to .gitignore, stage and commit .gitignore, and do not stage update_log.txt`
+     - `Cancel`
+   - Apply the selected option before final staging.
+   - If `Cancel`, stop without committing.
+3. Before commit, check staged paths for obvious sensitive files (for example: `.env`, `*.pem`, `*.key`, `credentials*`). If found, stop and ask user confirmation before including them.
+4. Commit with message body equal to version + confirmed log:
 
 ```bash
 git commit -m "$(cat <<'EOF'
@@ -83,14 +100,15 @@ EOF
 )"
 ```
 
-4. If commit fails (hooks, conflicts, etc.), report error and stop.
+5. If commit fails (hooks, conflicts, etc.), report error and stop.
 
 ### Step 5 - Post-commit push decision
 
 After a successful commit, do not auto-push.
 
-1. Ask the user whether to push the current local branch to remote.
-2. Only push when user explicitly confirms in the current run.
+1. Ask the user via a Claude Code choice list whether to push the current local branch to remote.
+   - Options: `Push now`, `Do not push`.
+2. Only push when the user explicitly selects `Push now` in the current run.
 3. Before pushing, verify:
    - current branch name
    - matching remote exists (for example `origin`)
