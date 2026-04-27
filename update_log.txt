@@ -1,3 +1,6 @@
+2026.4.27 13:44:38 - v260427-2 - ATreep
+- Remove author field from .claude-plugin/plugin.json
+
 2026.4.27 13:36:20 - v260427-1 - ATreep
 - Add marketplace.json for Claude Code plugin marketplace listing
 - Add CLAUDE.md with project architecture and usage guidance
