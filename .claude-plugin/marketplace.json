@@ -1,0 +1,26 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "project-version-workflow",
+  "owner": {
+    "name": "ATreep"
+  },
+  "plugins": [
+    {
+      "name": "project-version-workflow",
+      "source": "./",
+      "description": "Manage project versions and iterations with a standard workflow. Auto-generates dated version tags, maintains update_log.txt, and handles commits with confirmation.",
+      "version": "v260427-1",
+      "author": {
+        "name": "ATreep"
+      },
+      "keywords": [
+        "versioning",
+        "commit",
+        "workflow",
+        "release",
+        "update-log"
+      ],
+      "category": "workflow"
+    }
+  ]
+}
