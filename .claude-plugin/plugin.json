@@ -1,0 +1,6 @@
+{
+  "name": "project-version-workflow",
+  "description": "Manage project versions and iterations with a standard workflow. Auto-generates dated version tags, maintains update_log.txt, and handles commits with confirmation.",
+  "version": "1.0.0",
+  "author": "ATreep"
+}

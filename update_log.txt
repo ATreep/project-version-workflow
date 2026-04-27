@@ -1,0 +1,5 @@
+2026.4.27 11:49:33 - v260427 - ATreep
+- Add Claude Code plugin structure with .claude-plugin/plugin.json
+- Rewrite README with plugin and standalone installation instructions
+- Reformat skill description in README
+
