@@ -1,3 +1,7 @@
+2026.5.1 00:52:55 - v260501-2 - treep
+
+- Document version sync rules in CLAUDE.md with bilingual instructions and table format
+
 2026.5.1 00:48:57 - v260501-1 - treep
 
 - Sync plugin.json and marketplace.json version to v260501
