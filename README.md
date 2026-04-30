@@ -9,20 +9,15 @@ Manage project's versions and iterations by a standard workflow on Claude Code.
 Install via Claude Code's plugin system:
 
 ```bash
-/plugin install project-version-workflow@github.com/ATreep/project-version-workflow
-```
-
-Or add as a marketplace:
-
-```bash
 /plugin marketplace add ATreep/project-version-workflow
 /plugin install project-version-workflow
 ```
 
-After installation, invoke the skill with the plugin namespace:
+After installation, invoke the skills with the plugin namespace:
 
 ```
 /project-version-workflow:update-commit
+/project-version-workflow:update-commit-noask
 ```
 
 
@@ -35,21 +30,25 @@ Copy the `skills` folder to your `.claude` directory:
 cp -r skills/* ~/.claude/skills/
 ```
 
-Then use the short-form command:
+Then use the short-form commands:
 
 ```
 /update-commit
+/update-commit-noask
 ```
 
 
 
 ## What PVW Does
 
-The following skill is provided:
+Two skills are provided:
 
-- `/update-commit`
+- `/update-commit` — Interactive versioned commit workflow
+- `/update-commit-noask` — Non-interactive variant; same workflow with all defaults auto-applied
 
 
+
+### `/update-commit`
 
 Generates a version name, commits a new version and manages update log automatically.
 
@@ -74,3 +73,7 @@ flowchart TD
     M -->|OK| N[Done]
     L -->|No| N
 ```
+
+### `/update-commit-noask`
+
+Same workflow as `/update-commit`, but fully non-interactive — never asks the user. Auto-initializes git if needed, uses the pre-generated update log as-is, always commits `update_log.txt`, and auto-pushes the current branch after a successful commit. Suitable for CI, loops, or hands-off workflows.
