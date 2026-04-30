@@ -9,7 +9,7 @@
       "name": "project-version-workflow",
       "source": "./",
       "description": "Manage project versions and iterations with a standard workflow. Auto-generates dated version tags, maintains update_log.txt, and handles commits with confirmation.",
-      "version": "v260501-3",
+      "version": "v260501-5",
       "author": {
         "name": "ATreep"
       },

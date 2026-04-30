@@ -1,3 +1,11 @@
+2026.5.1 01:23:58 - v260501-5 - treep
+
+Delete CLAUDE.md; rename noask→bypass; sync .claude-plugin versions to v260501-5
+
+2026.5.1 01:17:26 - v260501-4 - treep
+
+Rename update-commit-noask to update-commit-bypass in skill files and README
+
 2026.5.1 01:01:27 - v260501-3 - treep
 
 Simplify CLAUDE.md to focus on critical version-sync rule for .claude-plugin files
@@ -12,7 +20,7 @@ Simplify CLAUDE.md to focus on critical version-sync rule for .claude-plugin fil
 
 2026.5.1 00:45:55 - v260501 - treep
 
-- Add /update-commit-noask skill: non-interactive variant with auto-push
+- Add /update-commit-bypass skill: non-interactive variant with auto-push
 - Update README to document both skills
 
 

@@ -17,7 +17,7 @@ After installation, invoke the skills with the plugin namespace:
 
 ```
 /project-version-workflow:update-commit
-/project-version-workflow:update-commit-noask
+/project-version-workflow:update-commit-bypass
 ```
 
 
@@ -34,7 +34,7 @@ Then use the short-form commands:
 
 ```
 /update-commit
-/update-commit-noask
+/update-commit-bypass
 ```
 
 
@@ -44,7 +44,7 @@ Then use the short-form commands:
 Two skills are provided:
 
 - `/update-commit` — Interactive versioned commit workflow
-- `/update-commit-noask` — Non-interactive variant; same workflow with all defaults auto-applied
+- `/update-commit-bypass` — Non-interactive variant; same workflow with all defaults auto-applied
 
 
 
@@ -74,6 +74,6 @@ flowchart TD
     L -->|No| N
 ```
 
-### `/update-commit-noask`
+### `/update-commit-bypass`
 
 Same workflow as `/update-commit`, but fully non-interactive — never asks the user. Auto-initializes git if needed, uses the pre-generated update log as-is, always commits `update_log.txt`, and auto-pushes the current branch after a successful commit. Suitable for CI, loops, or hands-off workflows.

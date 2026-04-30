@@ -2,9 +2,9 @@
 description: "Non-interactive version of update-commit. Generates a dated version tag, prepends update_log.txt, commits, and auto-pushes — all without asking the user."
 ---
 
-# update-commit-noask
+# update-commit-bypass
 
-When invoked via `/update-commit-noask`, execute the same release-log-and-commit workflow as `/update-commit` (defined in `project-version-workflow:update-commit`), but with all interactive prompts resolved to their default choices. **Never ask the user any questions.**
+When invoked via `/update-commit-bypass`, execute the same release-log-and-commit workflow as `/update-commit` (defined in `project-version-workflow:update-commit`), but with all interactive prompts resolved to their default choices. **Never ask the user any questions.**
 
 ## Relationship to update-commit
 
