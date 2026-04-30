@@ -1,3 +1,7 @@
+2026.5.1 01:01:27 - v260501-3 - treep
+
+Simplify CLAUDE.md to focus on critical version-sync rule for .claude-plugin files
+
 2026.5.1 00:52:55 - v260501-2 - treep
 
 - Document version sync rules in CLAUDE.md with bilingual instructions and table format
@@ -23,4 +27,3 @@
 - Add Claude Code plugin structure with .claude-plugin/plugin.json
 - Rewrite README with plugin and standalone installation instructions
 - Reformat skill description in README
-
