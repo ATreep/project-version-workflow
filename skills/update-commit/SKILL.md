@@ -24,6 +24,8 @@ Sources scanned (at least 200 recent commits + `update_log.txt`):
 3. Find the maximum suffix across all sources.
 4. Next version = `max + 1` (or `vYYMMDD` if no match exists).
 
+**CRITICAL: The base tag `vYYMMDD` counts as suffix 0. If `vYYMMDD` already exists in any commit message or in `update_log.txt`, the next version MUST be `vYYMMDD-1` — never reuse `vYYMMDD`. Skipping the suffix or reusing an existing version is a violation of this rule.**
+
 ### Concrete example (date: 2026-05-01)
 
 | Commit messages found | update_log.txt found | Max suffix | Next version |
@@ -66,6 +68,7 @@ Apply the version iteration mechanism defined above:
 1. Scan at least 200 recent commit messages and `update_log.txt` for today's tags.
 2. Parse suffixes, find the maximum, and compute the next version.
 3. If no tag exists for today, start at `vYYMMDD`.
+4. **Reminder: `vYYMMDD` itself is suffix 0. If it already appears in commits or `update_log.txt`, the next version must be `vYYMMDD-1` or higher — never reuse an existing version.**
 
 ### Step 2 - Draft update log and request confirmation
 
