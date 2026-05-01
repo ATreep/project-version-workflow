@@ -1,3 +1,8 @@
+2026.5.2 00:08:15 - v260502 - treep
+
+Update SKILL.md with detailed version iteration mechanism and examples
+
+
 2026.5.1 23:25:46 - v260501-7 - treep
 
 Update update-commit-plugin command to include push to remote

@@ -6,13 +6,43 @@ description: "Generate a dated version tag, prepend update_log.txt, commit with 
 
 When invoked via `/update-commit`, execute the release-log-and-commit workflow in the current project directory.
 
-## Version tag rules
+## Version iteration mechanism
 
-Use `vYYMMDD` based on local date.
+### Tag format
 
-- Example: `v260416` for 2026-04-16.
-- If the base tag for today already exists, increment with suffix: `vYYMMDD-N` where `N` starts at `1`.
-- Daily sequence example: `v260416`, `v260416-1`, `v260416-2`.
+`vYYMMDD` or `vYYMMDD-N` where `YYMMDD` is the local date and `N` is the daily sequence number.
+
+- Base tag (suffix 0): `v260501`
+- Increments: `v260501-1`, `v260501-2`, `v260501-3`, ...
+
+### How the next version is determined
+
+Sources scanned (at least 200 recent commits + `update_log.txt`):
+
+1. Collect all tags matching `vYYMMDD(-N)?` for today's date.
+2. Parse suffix: `vYYMMDD` → 0, `vYYMMDD-N` → N.
+3. Find the maximum suffix across all sources.
+4. Next version = `max + 1` (or `vYYMMDD` if no match exists).
+
+### Concrete example (date: 2026-05-01)
+
+| Commit messages found | update_log.txt found | Max suffix | Next version |
+|-----------------------|----------------------|------------|--------------|
+| —                     | —                    | —          | `v260501`   |
+| `v260501`             | —                    | 0          | `v260501-1` |
+| `v260501`             | `v260501-1`          | 1          | `v260501-2` |
+| `v260501-2`, `v260501`| `v260501-1`          | 2          | `v260501-3` |
+
+### Daily sequence lifecycle
+
+Each calendar day resets to `vYYMMDD`. Multiple commits within the same day produce an incrementing sequence. The next day starts fresh.
+
+```
+2026-04-30: v260430, v260430-1
+2026-05-01: v260501                          ← new day, suffix resets
+2026-05-01: v260501, v260501-1, v260501-2    ← same day, suffix increments
+2026-05-02: v260502                          ← new day, suffix resets again
+```
 
 ## Required behavior
 
@@ -31,17 +61,11 @@ Use `vYYMMDD` based on local date.
 
 ### Step 1 - Determine next version
 
-Collect existing tags matching `vYYMMDD(-N)?` from:
+Apply the version iteration mechanism defined above:
 
-1. Recent commit messages (scan at least the latest 200 commits).
-2. `update_log.txt` (if present).
-
-Use deterministic selection:
-
-1. Parse all matches for today (`YYMMDD` based on local date).
-2. Treat `vYYMMDD` as suffix `0`, and `vYYMMDD-N` as suffix `N`.
-3. Find the maximum suffix.
-4. If no tag exists for today, use `vYYMMDD`; otherwise use `vYYMMDD-(max+1)`.
+1. Scan at least 200 recent commit messages and `update_log.txt` for today's tags.
+2. Parse suffixes, find the maximum, and compute the next version.
+3. If no tag exists for today, start at `vYYMMDD`.
 
 ### Step 2 - Draft update log and request confirmation
 
