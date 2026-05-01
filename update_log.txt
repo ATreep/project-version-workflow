@@ -1,3 +1,7 @@
+2026.5.1 23:25:46 - v260501-7 - treep
+
+Update update-commit-plugin command to include push to remote
+
 2026.5.1 23:20:04 - v260501-6 - treep
 
 Add update-commit-plugin command; clarify update_log.txt prepend rule in SKILL.md
