@@ -1,43 +1,36 @@
-2026.5.2 00:28:10 - v260502-1 - treep
+2026.5.2 00:58:56 - v260502-2 - treep
+Rewrite SKILL.md for strict AI enforceability; sync .claude-plugin versions
 
+2026.5.2 00:28:10 - v260502-1 - treep
 Add critical rule to SKILL.md preventing reuse of base version tag
 
 
 2026.5.2 00:08:15 - v260502 - treep
-
 Update SKILL.md with detailed version iteration mechanism and examples
 
 
 2026.5.1 23:25:46 - v260501-7 - treep
-
 Update update-commit-plugin command to include push to remote
 
 2026.5.1 23:20:04 - v260501-6 - treep
-
 Add update-commit-plugin command; clarify update_log.txt prepend rule in SKILL.md
 
 2026.5.1 01:23:58 - v260501-5 - treep
-
 Delete CLAUDE.md; rename noask→bypass; sync .claude-plugin versions to v260501-5
 
 2026.5.1 01:17:26 - v260501-4 - treep
-
 Rename update-commit-noask to update-commit-bypass in skill files and README
 
 2026.5.1 01:01:27 - v260501-3 - treep
-
 Simplify CLAUDE.md to focus on critical version-sync rule for .claude-plugin files
 
 2026.5.1 00:52:55 - v260501-2 - treep
-
 - Document version sync rules in CLAUDE.md with bilingual instructions and table format
 
 2026.5.1 00:48:57 - v260501-1 - treep
-
 - Sync plugin.json and marketplace.json version to v260501
 
 2026.5.1 00:45:55 - v260501 - treep
-
 - Add /update-commit-bypass skill: non-interactive variant with auto-push
 - Update README to document both skills
 
