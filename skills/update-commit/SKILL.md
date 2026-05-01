@@ -72,6 +72,7 @@ Rules:
 - Append the git username (`git config user.name`) to the header line when it is set, so the line becomes `YYYY.M.D hh:mm:ss - VERSION - USERNAME`.
 - Keep exactly one blank line after the entry.
 - If `update_log.txt` does not exist, create it with this entry as the first block.
+- Always prepend the new block at the top, preserving existing content below.
 
 ### Step 4 - Commit
 

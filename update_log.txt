@@ -1,3 +1,7 @@
+2026.5.1 23:20:04 - v260501-6 - treep
+
+Add update-commit-plugin command; clarify update_log.txt prepend rule in SKILL.md
+
 2026.5.1 01:23:58 - v260501-5 - treep
 
 Delete CLAUDE.md; rename noask→bypass; sync .claude-plugin versions to v260501-5
