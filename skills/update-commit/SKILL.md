@@ -188,7 +188,34 @@ git check-ignore update_log.txt
 | Gitignore option | Append `update_log.txt` to `.gitignore`, then `git add .gitignore` |
 | Cancel | **STOP**. Do not commit. Do not push. |
 
-### 4.3 Sensitive file check
+### 4.3 Ensure .DS_Store is ignored on macOS
+
+Detect the operating system:
+
+```bash
+uname -s
+```
+
+If the output is `Darwin` (macOS), check whether `.DS_Store` is already git-ignored:
+
+```bash
+git check-ignore .DS_Store
+```
+
+**If NOT ignored** (command exits 1) → check whether `.gitignore` exists:
+
+```bash
+test -f .gitignore && echo exists || echo missing
+```
+
+- If `.gitignore` exists → append `.DS_Store` on a new line at the end, then run `git add .gitignore`.
+- If `.gitignore` does not exist → create `.gitignore` containing `.DS_Store`, then run `git add .gitignore`.
+
+**If already ignored** (command exits 0) → do nothing. Continue to 4.4.
+
+If the OS is not macOS → skip this step entirely. Continue to 4.4.
+
+### 4.4 Sensitive file check
 
 Before committing, inspect all staged paths:
 
@@ -205,7 +232,7 @@ If any staged file matches these patterns → **STOP** and ask the user to confi
 
 Use `AskUserQuestion` with options: `Commit anyway` / `Cancel`.
 
-### 4.4 Create commit
+### 4.5 Create commit
 
 Commit with this exact message format. The first line is the VERSION. A blank line. Then the confirmed update logs:
 
@@ -220,7 +247,7 @@ EOF
 
 Replace `VERSION` and `update logs...` with the actual values.
 
-### 4.5 Handle commit failure
+### 4.6 Handle commit failure
 
 If the commit fails (hook error, merge conflict, etc.) → **STOP**. Report the error output to the user. Do not retry. Do not amend. Do not force.
 

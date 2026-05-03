@@ -1,3 +1,6 @@
+2026.5.3 16:04:34 - v260503 - treep
+Add macOS .DS_Store gitignore check to update-commit SKILL.md; sync .claude-plugin versions
+
 2026.5.2 00:58:56 - v260502-2 - treep
 Rewrite SKILL.md for strict AI enforceability; sync .claude-plugin versions
 
