@@ -1,5 +1,5 @@
 ---
-description: "Generate a dated version tag, prepend update_log.txt, commit with that version, and push the current branch after confirmation."
+description: "Generate a dated version tag, create a professional conventional-commit, tag it, and optionally push."
 ---
 
 # update-commit
@@ -35,7 +35,7 @@ git diff --cached --name-only
 git ls-files --others --exclude-standard
 ```
 
-- If ALL three outputs are empty → the tree is clean. **Report "Working tree is clean — nothing to commit."** and **STOP**. Do not touch `update_log.txt`. Do not commit. Do not push.
+- If ALL three outputs are empty → the tree is clean. **Report "Working tree is clean — nothing to commit."** and **STOP**.
 - If any output is non-empty → the tree is dirty. Record the changed file lists for use in Step 4. Continue to Step 1.
 
 ---
@@ -54,141 +54,110 @@ Store the result as `YYMMDD`. Example: `260502`.
 
 ### 1.2 Scan for existing today tags
 
-Collect version tags matching today's date from BOTH sources:
-
-**Source A — recent commit messages:**
+Collect version tags matching today's date from recent commit messages:
 
 ```bash
 git log --format=%s -200
 ```
 
-**Source B — update_log.txt (if it exists):**
-
-```bash
-cat update_log.txt 2>/dev/null
-```
-
-From both sources combined, extract every string matching the pattern `vYYMMDD` or `vYYMMDD-N` where `YYMMDD` is today's date.
+Extract every string matching the pattern `vYYMMDD` or `vYYMMDD-N` where `YYMMDD` is today's date.
 
 ### 1.3 Parse suffixes and find maximum
-
-Apply these rules mechanically:
 
 | Match found | Suffix value |
 |---|---|
 | `vYYMMDD` (no `-N`) | 0 |
 | `vYYMMDD-N` | N |
 
-Find the maximum suffix value across all matches from both sources.
+Find the maximum suffix value across all matches.
 
 ### 1.4 Compute next version
 
 | Condition | Next version |
 |---|---|
-| No match found in either source | `vYYMMDD` |
+| No match found | `vYYMMDD` |
 | Maximum suffix is N | `vYYMMDD-(N+1)` |
 
-**VIOLATION — never do this:** If `vYYMMDD` already appears in ANY commit message or in `update_log.txt`, the next version MUST be `vYYMMDD-1` or higher. Reusing `vYYMMDD` when it already exists is forbidden. The base tag counts as suffix 0.
+**VIOLATION — never do this:** If `vYYMMDD` already appears in ANY commit message, the next version MUST be `vYYMMDD-1` or higher. Reusing `vYYMMDD` when it already exists is forbidden. The base tag counts as suffix 0.
 
-**Verification:** After computing the next version, grep both sources again to confirm it does not already exist. If it does exist, increment until you find an unused version.
+**Verification:** After computing the next version, grep commit messages again to confirm it does not already exist. If it does exist, increment until you find an unused version.
 
 ---
 
-## Step 2 — Draft update log and request confirmation
+## Step 2 — Draft commit message
 
-### 2.1 Generate change summary
+### 2.1 Classify the change
 
-From the diff output collected in Step 0.2, write a brief summary: 1–3 bullet points or one short sentence describing what changed.
+Analyze the diff from Step 0.2 and pick exactly one conventional commit type:
 
-### 2.2 Present draft and wait for confirmation
+| Type | Use when |
+|---|---|
+| `feat.` | New feature or capability |
+| `fix.` | Bug fix or error correction |
+| `docs.` | Documentation only |
+| `refactor.` | Code restructuring without behavior change |
+| `perf.` | Performance improvement |
+| `chore.` | Maintenance, tooling, dependencies |
+| `style.` | Formatting, whitespace, naming conventions |
+
+### 2.2 Draft the subject line (first line)
+
+Format — the version comes first, then the type with a trailing period, then a concise imperative summary:
+
+```
+vYYMMDD(-N) <type>. <summary>
+```
+
+Rules:
+- Max ~72 characters total.
+- Summary is a short imperative phrase (e.g., "add macOS .DS_Store gitignore check").
+- No trailing period on the summary.
+
+Examples:
+
+```
+v260503 feat. add macOS .DS_Store gitignore check
+v260502-1 fix. prevent reuse of base version tag
+v260416 docs. rewrite SKILL.md for strict AI enforceability
+v260427-2 refactor. simplify version sync logic in plugin metadata
+```
+
+### 2.3 Draft the detailed body (following lines)
+
+Below the subject line, leave one blank line, then list each meaningful change as a numbered item:
+
+```
+1. <what was added or changed>
+2. <what was added or changed>
+3. ...
+```
+
+Rules:
+- Each item is a single concise sentence describing one logical change.
+- Include 1–5 items. Omit trivial or formatting-only changes.
+- Do not repeat the subject line verbatim.
+
+### 2.4 Present draft and request confirmation
 
 Use `AskUserQuestion` with exactly these options:
 
 - `Use as-is`
-- `Modify update log`
+- `Modify commit message`
 - `Cancel`
 
-Show the draft text in the question prompt. **Wait for the user's explicit selection before doing anything else.**
+Show the full draft (subject + blank line + numbered body) in the question prompt. **Wait for the user's explicit selection before doing anything else.**
 
 | User selection | Action |
 |---|---|
 | `Use as-is` | Use the draft unchanged. Continue to Step 3. |
-| `Modify update log` | Collect the user's edited text. Use that as the confirmed log. Continue to Step 3. |
-| `Cancel` | **STOP**. Do not write `update_log.txt`. Do not commit. Do not push. |
+| `Modify commit message` | Collect the user's edited text. Use that as the confirmed message. Continue to Step 3. |
+| `Cancel` | **STOP**. Do not commit. |
 
 **Do not proceed past this point without an explicit user selection.**
 
 ---
 
-## Step 3 — Prepend update_log.txt
-
-After user confirmation, prepend this exact block to `update_log.txt`:
-
-```text
-YYYY.M.D hh:mm:ss - VERSION
-update logs...
-
-```
-
-### Format rules (all mandatory)
-
-1. `YYYY.M.D` — current local date. Use actual date values, not zero-padded. Example: `2026.5.2`, not `2026.05.02`.
-2. `hh:mm:ss` — current local time, 24-hour format, zero-padded. Example: `00:28:10`.
-3. `VERSION` — the version string from Step 1.
-4. Username — append ` - USERNAME` to the header line if `git config user.name` returns a value. The header line becomes: `YYYY.M.D hh:mm:ss - VERSION - USERNAME`.
-5. Update logs — the confirmed text from Step 2, immediately after the header line.
-6. Exactly one blank line after the entry, before any existing content.
-7. If `update_log.txt` does not exist, create it with this entry as the first block.
-8. Always prepend — new block goes at the top. Existing content stays below, unchanged.
-
-### Example entry
-
-```text
-2026.5.2 00:28:10 - v260502-1 - treep
-Add critical rule to SKILL.md preventing reuse of base version tag
-
-```
-
----
-
-## Step 4 — Commit
-
-### 4.1 Stage files
-
-Stage each file explicitly by name. Use the file lists from Step 0.2. Do NOT use `git add .` or `git add -A`.
-
-```bash
-git add <file1> <file2> ...
-```
-
-### 4.2 Handle update_log.txt and .gitignore
-
-First, check if `update_log.txt` is currently git-ignored:
-
-```bash
-git check-ignore update_log.txt
-```
-
-**If ignored** (command exits 0) → use `AskUserQuestion` with these options:
-
-- `Temporarily force-add and commit update_log.txt`
-- `Keep update_log.txt ignored and do not commit it`
-- `Cancel`
-
-**If NOT ignored** (command exits 1) → use `AskUserQuestion` with these options:
-
-- `Commit update_log.txt in this commit`
-- `Add update_log.txt to .gitignore, stage and commit .gitignore, and do not stage update_log.txt`
-- `Cancel`
-
-| User selection | Action |
-|---|---|
-| Force-add option | Run `git add -f update_log.txt` |
-| Commit option | Run `git add update_log.txt` |
-| Gitignore option | Append `update_log.txt` to `.gitignore`, then `git add .gitignore` |
-| Cancel | **STOP**. Do not commit. Do not push. |
-
-### 4.3 Ensure .DS_Store is ignored on macOS
+## Step 3 — Ensure .DS_Store is ignored on macOS
 
 Detect the operating system:
 
@@ -211,11 +180,23 @@ test -f .gitignore && echo exists || echo missing
 - If `.gitignore` exists → append `.DS_Store` on a new line at the end, then run `git add .gitignore`.
 - If `.gitignore` does not exist → create `.gitignore` containing `.DS_Store`, then run `git add .gitignore`.
 
-**If already ignored** (command exits 0) → do nothing. Continue to 4.4.
+**If already ignored** (command exits 0) → do nothing. Continue to Step 4.
 
-If the OS is not macOS → skip this step entirely. Continue to 4.4.
+If the OS is not macOS → skip this step entirely. Continue to Step 4.
 
-### 4.4 Sensitive file check
+---
+
+## Step 4 — Commit
+
+### 4.1 Stage files
+
+Stage each file explicitly by name. Use the file lists from Step 0.2. Do NOT use `git add .` or `git add -A`.
+
+```bash
+git add <file1> <file2> ...
+```
+
+### 4.2 Sensitive file check
 
 Before committing, inspect all staged paths:
 
@@ -223,7 +204,7 @@ Before committing, inspect all staged paths:
 git diff --cached --name-only
 ```
 
-If any staged file matches these patterns → **STOP** and ask the user to confirm before proceeding:
+If any staged file matches these patterns → **STOP** and ask the user to confirm:
 
 - `.env` or `.env.*`
 - `*.pem`, `*.key`, `*.p12`
@@ -232,32 +213,64 @@ If any staged file matches these patterns → **STOP** and ask the user to confi
 
 Use `AskUserQuestion` with options: `Commit anyway` / `Cancel`.
 
-### 4.5 Create commit
+### 4.3 Create commit
 
-Commit with this exact message format. The first line is the VERSION. A blank line. Then the confirmed update logs:
+Commit with the confirmed message from Step 2. The exact format passed to `git commit -m` is:
+
+```
+vYYMMDD(-N) type. summary
+
+1. first change description
+2. second change description
+3. third change description
+```
+
+Use a heredoc to preserve formatting:
 
 ```bash
 git commit -m "$(cat <<'EOF'
-VERSION
+vYYMMDD(-N) type. summary
 
-update logs...
+1. first change description
+2. second change description
+3. third change description
 EOF
 )"
 ```
 
-Replace `VERSION` and `update logs...` with the actual values.
+Replace the placeholder text with the actual confirmed values.
 
-### 4.6 Handle commit failure
+### 4.4 Handle commit failure
 
 If the commit fails (hook error, merge conflict, etc.) → **STOP**. Report the error output to the user. Do not retry. Do not amend. Do not force.
 
 ---
 
-## Step 5 — Post-commit push decision
+## Step 5 — Create git tag
 
-After a successful commit, do NOT auto-push.
+After a successful commit, create an annotated tag matching the version:
 
-### 5.1 Gather branch and remote info
+```bash
+git tag -a VERSION -m "SUBJECT_LINE"
+```
+
+Where `VERSION` is the version string (e.g., `v260503` or `v260502-1`) and `SUBJECT_LINE` is the full first line of the commit message.
+
+Verify the tag exists:
+
+```bash
+git tag -l VERSION
+```
+
+If the output is empty → **STOP**. Report that tag creation failed. Do not force.
+
+---
+
+## Step 6 — Post-commit push decision
+
+After a successful commit and tag, do NOT auto-push.
+
+### 6.1 Gather branch and remote info
 
 Run:
 
@@ -266,7 +279,7 @@ git branch --show-current
 git remote -v
 ```
 
-### 5.2 Ask user whether to push
+### 6.2 Ask user whether to push
 
 Use `AskUserQuestion` with exactly these options:
 
@@ -275,21 +288,21 @@ Use `AskUserQuestion` with exactly these options:
 
 | User selection | Action |
 |---|---|
-| `Push now` | Continue to 5.3 |
+| `Push now` | Continue to 6.3 |
 | `Do not push` | **STOP**. Workflow complete. |
 
-### 5.3 Push
+### 6.3 Push
 
-Push the current local branch to its remote tracking branch:
+Push the current local branch and the new tag to the remote:
 
 ```bash
-git push
+git push && git push --tags
 ```
 
 If no upstream is configured, use:
 
 ```bash
-git push -u origin <branch-name>
+git push -u origin <branch-name> && git push --tags
 ```
 
 If push is rejected → **STOP**. Report the git output. Do NOT force push.
@@ -303,7 +316,7 @@ This is the authoritative algorithm for Step 1. Follow it mechanically.
 ### Input
 
 - Today's date as `YYMMDD` (e.g., `260502`)
-- List of version strings from commit messages and `update_log.txt`
+- List of version strings from commit messages
 
 ### Process
 
@@ -352,6 +365,8 @@ The following are violations of this skill. Do not do any of them:
 8. Continuing when the working tree is clean.
 9. Amending a commit instead of creating a new one.
 10. Proceeding to the next step before the current step completes.
+11. Omitting the git tag after a successful commit.
+12. Using a commit type other than the seven allowed (`feat.` / `fix.` / `docs.` / `refactor.` / `perf.` / `chore.` / `style.`).
 
 ---
 
@@ -362,7 +377,8 @@ The following are violations of this skill. Do not do any of them:
 | Not a git repo | Ask whether to init. Do nothing until user decides. |
 | Clean working tree | Report and exit. |
 | Cannot determine previous version | Start from `vYYMMDD`. |
-| `update_log.txt` malformed | Still prepend new block at top. |
 | Commit fails | Report error and stop. |
+| Tag already exists | Increment suffix and retry. |
+| Tag creation fails | Report error and stop. |
 | Push rejected | Report git output and stop. Never force push. |
 | Remote or upstream missing | Report state and stop for user decision. |

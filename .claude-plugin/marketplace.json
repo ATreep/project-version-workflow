@@ -8,7 +8,7 @@
     {
       "name": "project-version-workflow",
       "source": "./",
-      "description": "Manage project versions and iterations with a standard workflow. Auto-generates dated version tags, maintains update_log.txt, and handles commits with confirmation.",
+      "description": "Manage project versions and iterations with a standard workflow. Auto-generates dated version tags, creates professional conventional commits, and manages git tags.",
       "version": "v260503",
       "author": {
         "name": "ATreep"
@@ -18,7 +18,8 @@
         "commit",
         "workflow",
         "release",
-        "update-log"
+        "git-tag",
+        "conventional-commit"
       ],
       "category": "workflow"
     }

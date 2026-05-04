@@ -1,27 +1,37 @@
 ---
-description: "Non-interactive version of update-commit. Generates a dated version tag, prepends update_log.txt, commits, and auto-pushes — all without asking the user."
+description: "Non-interactive version of update-commit. Generates a dated version tag, commits with a conventional message, creates a git tag, and auto-pushes — all without asking the user."
 ---
 
 # update-commit-bypass
 
-When invoked via `/update-commit-bypass`, execute the same release-log-and-commit workflow as `/update-commit` (defined in `project-version-workflow:update-commit`), but with all interactive prompts resolved to their default choices. **Never ask the user any questions.**
+When invoked via `/update-commit-bypass`, execute the same workflow as `/update-commit` (defined in `project-version-workflow:update-commit`), but with all interactive prompts resolved to their default choices. **Never ask the user any questions.**
 
 ## Relationship to update-commit
 
-This skill is a thin wrapper around `project-version-workflow:update-commit`. All version tag rules, diff collection, update log formatting, commit message format, and error handling are defined there. This skill only overrides the decision points — everything else is delegated to the base skill.
+This skill is a thin wrapper around `project-version-workflow:update-commit`. All version tag rules, diff collection, commit message format, and error handling are defined there. This skill only overrides the decision points — everything else is delegated to the base skill.
 
-### Update log confirmation
+### Git init
+
+- If not inside a git repo, run `git init` automatically. Do not ask.
+
+### Commit message confirmation
 
 - Always use the pre-generated draft as-is. Do not present the `Use as-is / Modify / Cancel` choice list.
-- Skip directly to prepending `update_log.txt`.
+- Skip directly to staging and committing.
 
-### `.gitignore` handling
+### Sensitive file check
 
-- **If `update_log.txt` is NOT currently ignored**: Commit it normally in this commit. Do not ask.
+- If sensitive files are staged, auto-unstage them and warn the user. Do not ask.
+
+### Git tag
+
+- Always create the annotated git tag after a successful commit. Do not ask.
 
 ### Push
 
-- Always push the current local branch to its remote after a successful commit. Do not ask.
+- Always push the current local branch and tags to its remote after a successful commit. Do not ask.
+- Run `git push && git push --tags`.
+- If no upstream is configured, use `git push -u origin <branch-name> && git push --tags`.
 - If the push is rejected, report the error and stop (same as base skill — no force push).
 
 ## Summary of behavior
@@ -30,8 +40,8 @@ This skill is a thin wrapper around `project-version-workflow:update-commit`. Al
 |---|---|---|
 | Not a git repo | Ask | Auto `git init` |
 | Clean tree | Stop | Stop |
-| Update log draft | Ask (Use/Modify/Cancel) | Use as-is |
-| `update_log.txt` tracked | Ask | Commit normally |
+| Commit message draft | Ask (Use/Modify/Cancel) | Use as-is |
 | Sensitive staged files | Ask | Auto-unstage + warn |
-| After commit | Ask (Push/Don't) | Auto-push |
+| After commit | Create tag | Create tag (same) |
+| After tag | Ask (Push/Don't) | Auto-push with tags |
 | Push rejected | Stop | Stop |

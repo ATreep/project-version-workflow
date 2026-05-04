@@ -1,30 +1,27 @@
 # Project Version Workflow (PVW)
 
-Manage project's versions and iterations by a standard workflow on Claude Code.
+A Claude Code plugin that automates dated version tagging, professional conventional commits, and git tag management through a deterministic, step-by-step workflow.
 
 ## Installation
 
 ### As a Plugin (Recommended)
-
-Install via Claude Code's plugin system:
 
 ```bash
 /plugin marketplace add ATreep/project-version-workflow
 /plugin install project-version-workflow
 ```
 
-After installation, invoke the skills with the plugin namespace:
+Invoke with the plugin namespace:
 
 ```
 /project-version-workflow:update-commit
 /project-version-workflow:update-commit-bypass
+/project-version-workflow:view-update-log
 ```
 
+### As a Standalone Skill
 
-
-### As a Standalone Skill 
-
-Copy the `skills` folder to your `.claude` directory:
+Copy the `skills` directory into your Claude Code skills folder:
 
 ```bash
 cp -r skills/* ~/.claude/skills/
@@ -35,45 +32,101 @@ Then use the short-form commands:
 ```
 /update-commit
 /update-commit-bypass
+/view-update-log
 ```
 
-
-
-## What PVW Does
-
-Two skills are provided:
-
-- `/update-commit` — Interactive versioned commit workflow
-- `/update-commit-bypass` — Non-interactive variant; same workflow with all defaults auto-applied
-
-
+## Skills
 
 ### `/update-commit`
 
-Generates a version name, commits a new version and manages update log automatically.
+Interactive workflow that generates a dated version, drafts a professional commit message, creates an annotated git tag, and optionally pushes.
 
-`/update-commit` generates a daily version tag (e.g. `v260416`), records the changes in `update_log.txt` along with the git username when available, commits them, and optionally pushes to remote. It checks for a clean repo, asks you to confirm the change summary, warns about sensitive files, and never force-pushes.
+**Commit message format:**
+
+```
+v260503 feat. add macOS .DS_Store gitignore check
+
+1. Add .DS_Store detection on macOS in Step 3
+2. Create .gitignore automatically when missing
+3. Stage .gitignore before committing
+```
+
+The subject line uses a conventional commit type (`feat.` / `fix.` / `docs.` / `refactor.` / `perf.` / `chore.` / `style.`), and the body lists each meaningful change as a numbered item.
+
+**Workflow:**
+
+```text
+0. Preflight        Verify git repo, check working tree state
+1. Version          Scan recent commits, compute next vYYMMDD(-N)
+2. Draft message    Classify change type, draft subject + body, confirm with user
+3. .DS_Store        Auto-ignore on macOS if not already ignored
+4. Commit           Stage files explicitly, sensitive-file check, commit
+5. Git tag          Create annotated tag matching the version
+6. Push             Ask user whether to push branch + tags to remote
+```
 
 ```mermaid
 flowchart TD
-    A[Check git repo] -->|No| B[Offer git init]
-    A -->|Yes| C[Check working tree]
-    C -->|Clean| D[Stop]
-    C -->|Dirty| E[Pick next version]
-    E --> F[Draft update log]
+    A[Check git repo] -->|Not a repo| B[Offer git init]
+    A -->|OK| C[Check working tree]
+    C -->|Clean| D[Stop — nothing to commit]
+    C -->|Dirty| E[Compute next version]
+    E --> F[Draft commit message]
     F --> G{Confirm?}
-    G -->|No| F
-    G -->|Yes| H[Write update_log.txt]
-    H --> I[Stage files]
+    G -->|Modify| F
+    G -->|Cancel| D
+    G -->|Use as-is| H[Ensure .DS_Store ignored]
+    H --> I[Stage files + sensitive check]
     I --> J[Commit]
-    J -->|Fail| K[Stop]
-    J -->|OK| L[Ask to push]
-    L -->|Yes| M[Push branch]
-    M -->|Reject| K
-    M -->|OK| N[Done]
-    L -->|No| N
+    J -->|Fail| K[Stop — report error]
+    J -->|OK| L[Create git tag]
+    L --> M{Push?}
+    M -->|Yes| N[Push branch + tags]
+    N -->|Reject| K
+    M -->|No| O[Done]
+    N -->|OK| O
 ```
+
+**Version numbering:**
+
+- Each day starts at `vYYMMDD` (e.g., `v260503`).
+- Subsequent commits that day increment the suffix: `v260503-1`, `v260503-2`, etc.
+- The base tag (`vYYMMDD` without suffix) counts as suffix 0.
+- Versions reset each calendar day.
 
 ### `/update-commit-bypass`
 
-Same workflow as `/update-commit`, but fully non-interactive — never asks the user. Auto-initializes git if needed, uses the pre-generated update log as-is, always commits `update_log.txt`, and auto-pushes the current branch after a successful commit. Suitable for CI, loops, or hands-off workflows.
+Non-interactive variant of `/update-commit`. Resolves every confirmation prompt to its default. Never asks the user anything.
+
+| Decision point | `/update-commit` | `/update-commit-bypass` |
+|---|---|---|
+| Not a git repo | Ask | Auto `git init` |
+| Commit message | Confirm with user | Use draft as-is |
+| Sensitive files | Ask | Auto-unstage + warn |
+| Git tag | Create (same) | Create (same) |
+| Push | Ask | Auto-push with tags |
+
+Suitable for CI pipelines, automation loops, or hands-off workflows.
+
+### `/view-update-log`
+
+Read-only viewer for the project's update history, sourced from git commit messages.
+
+| Invocation | Output |
+|---|---|
+| `/view-update-log` | Latest commit + hint about history |
+| `/view-update-log history` | Last 10 commits |
+| `/view-update-log history N` | Last N commits |
+| `/view-update-log v260502` | Full details of a specific version |
+| `/view-update-log today` | All commits from today |
+| `/view-update-log week` | All commits from the past 7 days |
+
+## Design Decisions
+
+**Explicit staging.** Files are staged by name, never with `git add .` or `git add -A`. This prevents accidental inclusion of untracked or sensitive files.
+
+**No force operations.** The workflow never uses `--force`, `--no-verify`, or `--no-gpg-sign`. If a push is rejected, the error is reported and execution stops.
+
+**Deterministic versioning.** Version tags are computed from the current date and existing commit history. The algorithm is fully specified in the skill document — there is no ambiguity in version selection.
+
+**Annotated git tags.** Every version is recorded as an annotated tag (`git tag -a`), not a lightweight tag. This preserves the version message in the repository's tag metadata.
