@@ -73,14 +73,21 @@ Find the maximum suffix value across all matches.
 
 ### 1.4 Compute next version
 
+**CRITICAL RULE — VERSION MUST ALWAYS CHANGE.** Every invocation of this skill MUST produce a version string that is different from ALL existing versions for today. Reusing an existing version is the single most serious violation of this skill. There are NO exceptions.
+
 | Condition | Next version |
 |---|---|
 | No match found | `vYYMMDD` |
 | Maximum suffix is N | `vYYMMDD-(N+1)` |
 
-**VIOLATION — never do this:** If `vYYMMDD` already appears in ANY commit message, the next version MUST be `vYYMMDD-1` or higher. Reusing `vYYMMDD` when it already exists is forbidden. The base tag counts as suffix 0.
+This means:
+- If today has zero commits → first version is `vYYMMDD`
+- If `vYYMMDD` already exists in any commit message → next version is `vYYMMDD-1` (suffix 0 + 1 = 1)
+- If `vYYMMDD-1` already exists → next version is `vYYMMDD-2`
+- If `vYYMMDD-3` is the highest → next version is `vYYMMDD-4`
+- **Never** produce the same version string that already exists in commit history
 
-**Verification:** After computing the next version, grep commit messages again to confirm it does not already exist. If it does exist, increment until you find an unused version.
+**Verification (MANDATORY):** After computing the next version, grep commit messages again to confirm it does not already exist. If it does exist, increment the suffix until you find an unused version. This check is not optional.
 
 ---
 
@@ -355,7 +362,7 @@ Each calendar day starts fresh at `vYYMMDD`. The sequence from previous days doe
 
 The following are violations of this skill. Do not do any of them:
 
-1. Reusing an existing version tag.
+1. **Reusing an existing version tag.** This is the #1 violation. The version MUST change on every single invocation. If today already has a commit with `vYYMMDD`, the next commit MUST be `vYYMMDD-1` or higher. There are zero exceptions to this rule.
 2. Skipping user confirmation at any `AskUserQuestion` gate.
 3. Auto-pushing without explicit user selection.
 4. Using `git add .` or `git add -A` instead of explicit file names.
