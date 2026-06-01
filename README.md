@@ -57,7 +57,7 @@ The subject line uses a conventional commit type (`feat.` / `fix.` / `docs.` / `
 
 ```text
 0. Preflight        Verify git repo, check working tree state
-1. Version          Scan recent commits, compute next vYYMMDD(-N)
+1. Version          Capture current date+time, form vYYMMDD-HHmmss (e.g., v260601-145633)
 2. Draft message    Classify change type, draft subject + body, confirm with user
 3. .DS_Store        Auto-ignore on macOS if not already ignored
 4. Commit           Stage files explicitly, sensitive-file check, commit
@@ -89,10 +89,10 @@ flowchart TD
 
 **Version numbering:**
 
-- Each day starts at `vYYMMDD` (e.g., `v260503`).
-- Subsequent commits that day increment the suffix: `v260503-1`, `v260503-2`, etc.
-- The base tag (`vYYMMDD` without suffix) counts as suffix 0.
-- Versions reset each calendar day.
+- Each version uses the format `vYYMMDD-HHmmss` (e.g., `v260601-145633`).
+- The suffix is a timestamp (HHmmss = hour, minute, second), not a sequential counter.
+- Each invocation produces a unique version thanks to the timestamp.
+- The date prefix resets each calendar day at midnight.
 
 ### `/update-commit-bypass`
 

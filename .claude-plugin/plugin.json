@@ -1,5 +1,5 @@
 {
   "name": "project-version-workflow",
   "description": "Manage project versions and iterations with a standard workflow. Auto-generates dated version tags, creates professional conventional commits, and manages git tags.",
-  "version": "v260513"
+  "version": "v260601-150416"
 }

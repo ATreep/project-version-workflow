@@ -42,52 +42,41 @@ git ls-files --others --exclude-standard
 
 ## Step 1 — Determine next version
 
-### 1.1 Get today's date string
+### 1.1 Get today's date and current time
 
 Run:
 
 ```bash
 date +%y%m%d
+date +%H%M%S
 ```
 
-Store the result as `YYMMDD`. Example: `260502`.
+Store the results as `YYMMDD` and `HHMMSS`. Example: `260601` and `145633`.
 
-### 1.2 Scan for existing today tags
+### 1.2 Form the version string
 
-Collect version tags matching today's date from recent commit messages:
+The version format is `vYYMMDD-HHMMSS`. Form the version by combining the date and time:
 
-```bash
-git log --format=%s -200
+```
+v{YYMMDD}-{HHMMSS}
 ```
 
-Extract every string matching the pattern `vYYMMDD` or `vYYMMDD-N` where `YYMMDD` is today's date.
+Example: `v260601-145633`.
 
-### 1.3 Parse suffixes and find maximum
-
-| Match found | Suffix value |
-|---|---|
-| `vYYMMDD` (no `-N`) | 0 |
-| `vYYMMDD-N` | N |
-
-Find the maximum suffix value across all matches.
-
-### 1.4 Compute next version
+### 1.3 Collision check
 
 **CRITICAL RULE — VERSION MUST ALWAYS CHANGE.** Every invocation of this skill MUST produce a version string that is different from ALL existing versions for today. Reusing an existing version is the single most serious violation of this skill. There are NO exceptions.
 
-| Condition | Next version |
-|---|---|
-| No match found | `vYYMMDD` |
-| Maximum suffix is N | `vYYMMDD-(N+1)` |
+Although timestamps make collisions extremely unlikely, verify the computed version is truly unique:
 
-This means:
-- If today has zero commits → first version is `vYYMMDD`
-- If `vYYMMDD` already exists in any commit message → next version is `vYYMMDD-1` (suffix 0 + 1 = 1)
-- If `vYYMMDD-1` already exists → next version is `vYYMMDD-2`
-- If `vYYMMDD-3` is the highest → next version is `vYYMMDD-4`
-- **Never** produce the same version string that already exists in commit history
+```bash
+git log --format=%s -200 | grep -F "v{YYMMDD}-{HHMMSS}"
+```
 
-**Verification (MANDATORY):** After computing the next version, grep commit messages again to confirm it does not already exist. If it does exist, increment the suffix until you find an unused version. This check is not optional.
+- If **no match** → version is unique. Continue to Step 2.
+- If **match found** (two invocations within the same second, or clock skew) → wait 2 seconds, re-run `date +%H%M%S`, and form a new version. Repeat until a unique version is found. This check is not optional.
+
+**Verification (MANDATORY):** After forming the version, grep commit messages to confirm it does not already exist. If it does exist, wait and regenerate until unique. This check is not optional.
 
 ---
 
@@ -112,7 +101,7 @@ Analyze the diff from Step 0.2 and pick exactly one conventional commit type:
 Format — the version comes first, then the type with a trailing period, then a concise imperative summary:
 
 ```
-vYYMMDD(-N) <type>. <summary>
+vYYMMDD-HHMMSS <type>. <summary>
 ```
 
 Rules:
@@ -123,10 +112,10 @@ Rules:
 Examples:
 
 ```
-v260503 feat. add macOS .DS_Store gitignore check
-v260502-1 fix. prevent reuse of base version tag
-v260416 docs. rewrite SKILL.md for strict AI enforceability
-v260427-2 refactor. simplify version sync logic in plugin metadata
+v260601-145633 feat. add macOS .DS_Store gitignore check
+v260601-150821 fix. prevent reuse of base version tag
+v260531-093045 docs. rewrite SKILL.md for strict AI enforceability
+v260601-112314 refactor. simplify version sync logic in plugin metadata
 ```
 
 ### 2.3 Draft the detailed body (following lines)
@@ -225,7 +214,7 @@ Use `AskUserQuestion` with options: `Commit anyway` / `Cancel`.
 Commit with the confirmed message from Step 2. The exact format passed to `git commit -m` is:
 
 ```
-vYYMMDD(-N) type. summary
+vYYMMDD-HHMMSS type. summary
 
 1. first change description
 2. second change description
@@ -236,7 +225,7 @@ Use a heredoc to preserve formatting:
 
 ```bash
 git commit -m "$(cat <<'EOF'
-vYYMMDD(-N) type. summary
+vYYMMDD-HHMMSS type. summary
 
 1. first change description
 2. second change description
@@ -261,7 +250,7 @@ After a successful commit, create an annotated tag matching the version:
 git tag -a VERSION -m "SUBJECT_LINE"
 ```
 
-Where `VERSION` is the version string (e.g., `v260503` or `v260502-1`) and `SUBJECT_LINE` is the full first line of the commit message.
+Where `VERSION` is the version string (e.g., `v260601-145633`) and `SUBJECT_LINE` is the full first line of the commit message.
 
 Verify the tag exists:
 
@@ -316,44 +305,53 @@ If push is rejected → **STOP**. Report the git output. Do NOT force push.
 
 ---
 
-## Version iteration algorithm (reference)
+## Version generation algorithm (reference)
 
 This is the authoritative algorithm for Step 1. Follow it mechanically.
 
 ### Input
 
-- Today's date as `YYMMDD` (e.g., `260502`)
-- List of version strings from commit messages
+- Today's date as `YYMMDD` (e.g., `260601`)
+- Current time as `HHMMSS` (e.g., `145633`)
+- List of existing version strings from commit messages
 
 ### Process
 
 ```
-1. Filter: keep only strings matching `vYYMMDD` or `vYYMMDD-N`
-2. Parse: `vYYMMDD` → suffix 0, `vYYMMDD-N` → suffix N
-3. Find: max_suffix = maximum of all parsed suffixes (or -1 if no matches)
-4. Compute: next_suffix = max_suffix + 1
-5. Result: if next_suffix == 0 → "vYYMMDD", else → "vYYMMDD-{next_suffix}"
+1. Form: version = "v" + YYMMDD + "-" + HHMMSS
+2. Verify: grep commit history for this exact version string
+3. If found (collision): wait 2 seconds, get new HHMMSS, goto step 1
+4. Result: return the unique version string
+```
+
+### Format specification
+
+```
+v{YYMMDD}-{HHMMSS}
+ ├─ prefix (always "v")
+ ├─ date part: 2-digit year, 2-digit month, 2-digit day
+ ├─ hyphen separator
+ └─ time part: 2-digit hour (24h), 2-digit minute, 2-digit second
 ```
 
 ### Examples
 
-| Existing versions found | Max suffix | Next version |
+| Date | Time | Version |
 |---|---|---|
-| (none) | -1 | `v260502` |
-| `v260502` | 0 | `v260502-1` |
-| `v260502`, `v260502-1` | 1 | `v260502-2` |
-| `v260502-2`, `v260502` | 2 | `v260502-3` |
-| `v260502-3`, `v260502-1`, `v260502` | 3 | `v260502-4` |
+| 2026-06-01 | 14:56:33 | `v260601-145633` |
+| 2026-06-01 | 15:08:21 | `v260601-150821` |
+| 2026-05-31 | 09:30:45 | `v260531-093045` |
+| 2026-06-01 | 23:59:01 | `v260601-235901` |
 
 ### Daily reset rule
 
-Each calendar day starts fresh at `vYYMMDD`. The sequence from previous days does not carry over.
+The date part changes at midnight (local time). Each calendar day produces versions with a different `YYMMDD` prefix:
 
 ```
-2026-05-01: v260501, v260501-1, v260501-2
-2026-05-02: v260502                          ← resets
-2026-05-02: v260502, v260502-1               ← increments within day
-2026-05-03: v260503                          ← resets again
+2026-05-31 23:59:01 → v260531-235901
+2026-06-01 00:00:05 → v260601-000005  ← new date prefix
+2026-06-01 14:56:33 → v260601-145633
+2026-06-01 15:08:21 → v260601-150821
 ```
 
 ---
@@ -362,7 +360,7 @@ Each calendar day starts fresh at `vYYMMDD`. The sequence from previous days doe
 
 The following are violations of this skill. Do not do any of them:
 
-1. **Reusing an existing version tag.** This is the #1 violation. The version MUST change on every single invocation. If today already has a commit with `vYYMMDD`, the next commit MUST be `vYYMMDD-1` or higher. There are zero exceptions to this rule.
+1. **Reusing an existing version tag.** This is the #1 violation. The version MUST change on every single invocation. If a collision occurs (same-second invocation or clock skew), wait and regenerate until unique. There are zero exceptions to this rule.
 2. Skipping user confirmation at any `AskUserQuestion` gate.
 3. Auto-pushing without explicit user selection.
 4. Using `git add .` or `git add -A` instead of explicit file names.
@@ -383,9 +381,9 @@ The following are violations of this skill. Do not do any of them:
 |---|---|
 | Not a git repo | Ask whether to init. Do nothing until user decides. |
 | Clean working tree | Report and exit. |
-| Cannot determine previous version | Start from `vYYMMDD`. |
+| Version collision (same-second invocation) | Wait 2 seconds, regenerate timestamp, re-check. |
 | Commit fails | Report error and stop. |
-| Tag already exists | Increment suffix and retry. |
+| Tag already exists | Regenerate timestamp and retry. |
 | Tag creation fails | Report error and stop. |
 | Push rejected | Report git output and stop. Never force push. |
 | Remote or upstream missing | Report state and stop for user decision. |
