@@ -275,7 +275,72 @@ git branch --show-current
 git remote -v
 ```
 
-### 6.2 Ask user whether to push
+Store the current branch name as `CURRENT_BRANCH`. If the user has explicitly specified a target push branch (e.g., "push to staging" or "push to dev"), store it as `TARGET_BRANCH` and skip to 6.3.
+
+### 6.2 Decide push target
+
+If `CURRENT_BRANCH` is `main` → skip to 6.3 (standard push confirmation).
+
+If `CURRENT_BRANCH` is NOT `main` AND user has NOT specified a `TARGET_BRANCH` → ask the merge-to-main question using `AskUserQuestion`:
+
+- `Merge to main and push`
+- `Push current branch as-is`
+- `Do not push`
+
+| User selection | Action |
+|---|---|
+| `Merge to main and push` | Continue to 6.2a (merge flow). |
+| `Push current branch as-is` | Continue to 6.3 (standard push confirmation). |
+| `Do not push` | **STOP**. Workflow complete. |
+
+#### 6.2a Merge current branch into main
+
+Execute the merge flow:
+
+```bash
+git checkout main
+git merge <CURRENT_BRANCH>
+```
+
+**If merge succeeds** (no conflicts) → continue to 6.3. The push target is `main`.
+
+**If merge conflicts occur** (git exits non-zero) → follow the conflict resolution protocol below. Do NOT proceed until conflicts are resolved.
+
+##### Conflict resolution protocol
+
+When merge conflicts occur, the overriding principle is: **preserve as much code as possible, be cautious about removing source files or code.**
+
+1. List all conflicted files:
+   ```bash
+   git diff --name-only --diff-filter=U
+   ```
+
+2. For each conflicted file, read the conflict markers to understand both sides:
+   ```bash
+   grep -n "^<<<<<<< \|^=======$\|^>>>>>>> " <file>
+   ```
+
+3. Resolve conflicts by combining both sides where possible:
+   - Keep additions from both branches (do not delete code unless it's a clear, intentional removal).
+   - When the same region was modified on both sides, prefer keeping both versions with a comment separator rather than picking one and discarding the other.
+   - If a file was deleted on one side but modified on the other → **keep the file** (restore it from the branch that has it).
+   - Only remove code if it is provably dead, duplicate, or the user explicitly requested its removal.
+
+4. After resolving each file, stage it:
+   ```bash
+   git add <resolved-file>
+   ```
+
+5. Complete the merge:
+   ```bash
+   git commit -m "merge: merge <CURRENT_BRANCH> into main (conflict resolution)"
+   ```
+
+6. If you cannot resolve a conflict with confidence → **STOP** and ask the user for guidance. Show the conflicting sections.
+
+7. After the merge commit succeeds → continue to 6.3. The push target is `main`.
+
+### 6.3 Ask user whether to push
 
 Use `AskUserQuestion` with exactly these options:
 
@@ -284,18 +349,24 @@ Use `AskUserQuestion` with exactly these options:
 
 | User selection | Action |
 |---|---|
-| `Push now` | Continue to 6.3 |
+| `Push now` | Continue to 6.4 |
 | `Do not push` | **STOP**. Workflow complete. |
 
-### 6.3 Push
+### 6.4 Push
 
-Push the current local branch and the new tag to the remote:
+If the push target is `main` (either naturally or after merge):
+
+```bash
+git push origin main && git push --tags
+```
+
+Otherwise (pushing a non-main branch directly):
 
 ```bash
 git push && git push --tags
 ```
 
-If no upstream is configured, use:
+If no upstream is configured for a non-main branch, use:
 
 ```bash
 git push -u origin <branch-name> && git push --tags
@@ -372,6 +443,9 @@ The following are violations of this skill. Do not do any of them:
 10. Proceeding to the next step before the current step completes.
 11. Omitting the git tag after a successful commit.
 12. Using a commit type other than the seven allowed (`feat.` / `fix.` / `docs.` / `refactor.` / `perf.` / `chore.` / `style.`).
+13. Discarding code from either branch during merge conflict resolution without user approval.
+14. Deleting source files during merge conflict resolution unless the user explicitly requested it.
+15. Using `git merge -X ours` or `git merge -X theirs` (these blindly discard one side's changes).
 
 ---
 
@@ -387,3 +461,6 @@ The following are violations of this skill. Do not do any of them:
 | Tag creation fails | Report error and stop. |
 | Push rejected | Report git output and stop. Never force push. |
 | Remote or upstream missing | Report state and stop for user decision. |
+| Merge conflicts during merge-to-main | Follow conflict resolution protocol — preserve code, combine both sides, never blindly discard. |
+| Cannot resolve merge conflict with confidence | Stop and ask user for guidance with conflicting sections shown. |
+| `main` branch does not exist locally | Ask user whether to create it from remote (`git checkout -b main origin/main`) or push current branch as-is. |

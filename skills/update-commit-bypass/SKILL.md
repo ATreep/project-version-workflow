@@ -29,10 +29,37 @@ This skill is a thin wrapper around `project-version-workflow:update-commit`. Al
 
 ### Push
 
-- Always push the current local branch and tags to its remote after a successful commit. Do not ask.
-- Run `git push && git push --tags`.
+- Always push after a successful commit. Do not ask.
+- Gather branch info: `git branch --show-current` (store as `CURRENT_BRANCH`).
+- If the user has explicitly specified a target push branch → push to that branch. Do not merge.
+- If `CURRENT_BRANCH` is `main` → run `git push origin main && git push --tags`.
+- If `CURRENT_BRANCH` is NOT `main` AND no target branch was specified:
+  1. Auto-merge current branch into main:
+     ```bash
+     git checkout main
+     git merge <CURRENT_BRANCH>
+     ```
+  2. **If merge succeeds** (no conflicts) → run `git push origin main && git push --tags`.
+  3. **If merge conflicts occur** → follow the conflict resolution protocol below, then push.
 - If no upstream is configured, use `git push -u origin <branch-name> && git push --tags`.
 - If the push is rejected, report the error and stop (same as base skill — no force push).
+
+### Conflict resolution (when merging to main)
+
+When merge conflicts occur, the overriding principle is: **preserve as much code as possible. Be cautious about removing source files or code.**
+
+1. List all conflicted files: `git diff --name-only --diff-filter=U`
+2. For each conflicted file, read both sides (use `grep` to find conflict markers).
+3. Resolve by combining both sides:
+   - Keep additions from both branches — do not delete code unless it's a clear, intentional removal.
+   - When the same region was modified on both sides, keep both versions with a comment separator.
+   - If a file was deleted on one side but modified on the other → **keep the file**.
+   - Only remove code that is provably dead, duplicate, or the user explicitly requested removed.
+4. Stage resolved files: `git add <resolved-file>`
+5. Complete merge: `git commit -m "merge: merge <CURRENT_BRANCH> into main (conflict resolution)"`
+6. If unable to resolve with confidence → **STOP** and report the conflicting sections to the user.
+7. **Never** use `git merge -X ours` or `git merge -X theirs` — these blindly discard one side's changes.
+8. After merge commit succeeds → run `git push origin main && git push --tags`.
 
 ## Summary of behavior
 
@@ -43,5 +70,7 @@ This skill is a thin wrapper around `project-version-workflow:update-commit`. Al
 | Commit message draft | Ask (Use/Modify/Cancel) | Use as-is |
 | Sensitive staged files | Ask | Auto-unstage + warn |
 | After commit | Create tag | Create tag (same) |
-| After tag | Ask (Push/Don't) | Auto-push with tags |
+| Non-main branch, no target specified | Ask (merge to main / push as-is / don't push) | Auto-merge to main, resolve conflicts, push |
+| On `main` or target specified | Ask (Push/Don't) | Auto-push with tags |
+| Merge conflicts | Ask for guidance | Auto-resolve preserving all code, stop only if unsure |
 | Push rejected | Stop | Stop |

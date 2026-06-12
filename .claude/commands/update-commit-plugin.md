@@ -1,7 +1,9 @@
-Execute the workflow of `update-commit` but do not ask user any thing (using the default choices and push to the remote).
-While the `update-commit` skill determines the next version (Step 1), update the `version` field in every JSON file under `.claude-plugin/` to match before committing:
+Execute the skill `project-version-workflow:update-commit-bypass`.
+While the `project-version-workflow:update-commit` skill determines the next version (Step 1), update the `version` field in every JSON file under `.claude-plugin/` to match before committing:
 
-- `.claude-plugin/plugin.json` → `"version": "vYYMMDD"`
-- `.claude-plugin/marketplace.json` → `"version": "vYYMMDD"` (in `plugins[0].version`)
+- `.claude-plugin/plugin.json` → `"version": "vYYMMDD-HHmmss"`
+- `.claude-plugin/marketplace.json` → `"version": "vYYMMDD-HHmmss"` (in `plugins[0].version`)
 
 This ensures the plugin manifest and marketplace listing stay in sync with the repo tag.
+
+You should commit and push this repo with auth information in /Users/zhangsonghan/Documents/repositories/pat_and_username.txt
