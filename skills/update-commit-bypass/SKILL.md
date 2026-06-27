@@ -21,7 +21,7 @@ This skill is a thin wrapper around `project-version-workflow:update-commit`. Al
 
 ### Sensitive file check
 
-- If sensitive files are staged, auto-unstage them and warn the user. Do not ask.
+- Commit sensitive files by default. Do not ask and do not unstage them.
 
 ### Git tag
 
@@ -68,7 +68,7 @@ When merge conflicts occur, the overriding principle is: **preserve as much code
 | Not a git repo | Ask | Auto `git init` |
 | Clean tree | Stop | Stop |
 | Commit message draft | Ask (Use/Modify/Cancel) | Use as-is |
-| Sensitive staged files | Ask | Auto-unstage + warn |
+| Sensitive staged files | Ask | Commit by default |
 | After commit | Create tag | Create tag (same) |
 | Non-main branch, no target specified | Ask (merge to main / push as-is / don't push) | Auto-merge to main, resolve conflicts, push |
 | On `main` or target specified | Ask (Push/Don't) | Auto-push with tags |

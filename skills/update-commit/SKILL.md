@@ -186,10 +186,10 @@ If the OS is not macOS → skip this step entirely. Continue to Step 4.
 
 ### 4.1 Stage files
 
-Stage each file explicitly by name. Use the file lists from Step 0.2. Do NOT use `git add .` or `git add -A`.
+Use `git add .` to stage all files in the working tree. Do NOT stage files explicitly by name — `git add .` ensures no files are missed.
 
 ```bash
-git add <file1> <file2> ...
+git add .
 ```
 
 ### 4.2 Sensitive file check
@@ -434,7 +434,7 @@ The following are violations of this skill. Do not do any of them:
 1. **Reusing an existing version tag.** This is the #1 violation. The version MUST change on every single invocation. If a collision occurs (same-second invocation or clock skew), wait and regenerate until unique. There are zero exceptions to this rule.
 2. Skipping user confirmation at any `AskUserQuestion` gate.
 3. Auto-pushing without explicit user selection.
-4. Using `git add .` or `git add -A` instead of explicit file names.
+4. Staging files explicitly by name instead of using `git add .` to capture all changes.
 5. Using `--force`, `--no-verify`, or `--no-gpg-sign` on any git command.
 6. Committing sensitive files without user confirmation.
 7. Continuing after the user selects `Cancel`.
